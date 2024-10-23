@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Golang Web Server with Bootstrap</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <script>
+        // Fungsi untuk menangani submit form dan tampilkan hasil tanpa reload halaman
+        async function handleSubmit(event) {
+            event.preventDefault(); // Cegah reload halaman
+
+            const form = event.target;
+            const formData = new FormData(form);
+
+            const resultContainer = document.getElementById('resultContainer');
+            const loader = document.getElementById('loader');
+
+            resultContainer.innerHTML = ''; // Bersihkan hasil sebelumnya
+            loader.classList.remove('d-none'); // Tampilkan loader
+
+            try {
+                const response = await fetch('/find', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                loader.classList.add('d-none'); // Sembunyikan loader
+
+                if (response.ok) {
+                    const result = await response.json();
+                    displayResult(result);
+                } else {
+                    displayError('Error submitting form: ' + response.statusText);
+                }
+            } catch (error) {
+                loader.classList.add('d-none');
+                displayError('Fetch error: ' + error.message);
+            }
+        }
+
+        // Fungsi untuk menampilkan hasil di tabel
+        function displayResult(result) {
+            const resultContainer = document.getElementById('resultContainer');
+            const saveCsvButton = document.getElementById('saveCsvButton');
+
+            if (result.length === 0) {
+                resultContainer.innerHTML = '<p class="text-center text-danger">No matching results found.</p>';
+                saveCsvButton.classList.add('d-none');
+                return;
+            }
+
+            const rows = result.map(el => `
+                <tr>
+                    <td>${el.UserAddress}</td>
+                    <td>${el.TxHash}</td>
+                    <td>${el.DateTime}</td>
+                </tr>`).join('');
+
+            resultContainer.innerHTML = `
+                <h2 class="text-center mb-3">Result</h2>
+                <div id="resultTableContainer">
+                    <table class="table table-bordered table-striped" id="resultTable">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>User Address</th>
+                                <th>Tx Hash</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rows}
+                        </tbody>
+                    </table>
+                </div>`;
+
+            saveCsvButton.classList.remove('d-none'); // Tampilkan tombol Save as CSV
+        }
+
+        // Fungsi untuk menampilkan pesan error
+        function displayError(message) {
+            const resultContainer = document.getElementById('resultContainer');
+            resultContainer.innerHTML = `<p class="text-center text-danger">${message}</p>`;
+        }
+
+        // Fungsi untuk menyimpan data sebagai CSV
+        function saveAsCSV() {
+            const rows = Array.from(document.querySelectorAll("#resultTable tr"));
+            const csvContent = rows.map(row => {
+                const cells = Array.from(row.querySelectorAll("th, td"));
+                return cells.map(cell => `"${cell.innerText}"`).join(",");
+            }).join("\n");
+
+            const blob = new Blob([csvContent], { type: "text/csv" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "PumpFinder_Result.csv";
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</head>
+
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">Pump Finder</h1>
+
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <form onsubmit="handleSubmit(event)">
+                    <div class="mb-3">
+                        <label for="minbuy" class="form-label">Min Buy:</label>
+                        <input type="number" step="0.01" id="minbuy" name="minbuy" class="form-control"
+                               placeholder="Enter minimum buy amount" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="userInput" class="form-label">Token List:</label>
+                        <textarea id="userInput" name="userInput" class="form-control" rows="5"
+                                  placeholder="Paste your token list here" required></textarea>
+                    </div>
+
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="text-center mt-3">
+            <button id="saveCsvButton" class="btn btn-secondary d-none" onclick="saveAsCSV()">Save as CSV</button>
+        </div>
+
+        <div class="row justify-content-center mt-3">
+            <div id="loader" class="spinner-border text-primary d-none" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+
+        <div class="row justify-content-center mt-5" id="resultContainer"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
