@@ -12,10 +12,9 @@ import (
 )
 
 func ProcessTokenList(input string) []string {
-	// Pecah berdasarkan newlines (\n atau \r\n)
+
 	lines := strings.Split(strings.ReplaceAll(input, "\r\n", "\n"), "\n")
 
-	// Trim setiap baris untuk menghindari whitespace berlebih
 	var cleaned []string
 	for _, line := range lines {
 		trimmed := strings.TrimSpace(line)
@@ -26,15 +25,13 @@ func ProcessTokenList(input string) []string {
 	return cleaned
 }
 func main() {
-	// Inisialisasi router Gin
+
 	router := gin.Default()
 
-	// Route untuk halaman utama
 	router.GET("/", func(c *gin.Context) {
-		c.File("templates/index.html") // Render halaman HTML
+		c.File("templates/index.html") 
 	})
 
-	// Route untuk menerima POST di /find
 	router.POST("/find", func(c *gin.Context) {
 		tokenList := c.PostForm("userInput")
 		minBuy := c.PostForm("minbuy")
@@ -56,11 +53,10 @@ func main() {
 			firstResult = helper.FindMatchingUsers(firstResult, nextResult)
 		}
 		finalResult := removeDuplicateUsers(firstResult)
-		// Konversi hasil ke JSON
+
 		sendJSONResponse(c, finalResult)
 	})
 
-	// Jalankan server di port 8080
 	router.Run(":8080")
 }
 
@@ -86,7 +82,6 @@ func fetchAndHandleError(token, minBuyStr string) ([]helper.Result, error) {
 	return result, nil
 }
 
-// sendJSONResponse: Mengirim respons JSON ke client.
 func sendJSONResponse(c *gin.Context, data []helper.Result) {
 	jsonData, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
